@@ -109,4 +109,70 @@ final class QueriesTests: XCTestCase {
         let challenge = try Queries.challengeForDate(db, date: "2026-02-20")
         XCTAssertNil(challenge)
     }
+
+    // MARK: - Workouts & Exercises
+
+    func testAllWorkouts() throws {
+        let workouts = try Queries.allWorkouts(db)
+        XCTAssertEqual(workouts.count, 3)
+    }
+
+    func testWorkoutByName() throws {
+        let workout = try Queries.workoutByName(db, name: "Day A")
+        XCTAssertNotNil(workout)
+        XCTAssertEqual(workout?.name, "Day A")
+
+        let missing = try Queries.workoutByName(db, name: "Day Z")
+        XCTAssertNil(missing)
+    }
+
+    func testExercisesForWorkout() throws {
+        let workout = try Queries.workoutByName(db, name: "Day A")!
+        let entries = try Queries.exercisesForWorkout(db, workoutId: workout.id!)
+        XCTAssertEqual(entries.count, 9)
+
+        // Verify ordering
+        for (index, entry) in entries.enumerated() {
+            XCTAssertEqual(entry.1.position, index)
+        }
+
+        // Verify first exercise is the warm-up
+        XCTAssertEqual(entries[0].0.name, "Cardio warm-up (cycling)")
+        XCTAssertEqual(entries[0].0.counterUnit, "timer")
+    }
+
+    func testExercisesForWorkoutDayB() throws {
+        let workout = try Queries.workoutByName(db, name: "Day B")!
+        let entries = try Queries.exercisesForWorkout(db, workoutId: workout.id!)
+        XCTAssertEqual(entries.count, 7)
+    }
+
+    func testExercisesForWorkoutDayC() throws {
+        let workout = try Queries.workoutByName(db, name: "Day C")!
+        let entries = try Queries.exercisesForWorkout(db, workoutId: workout.id!)
+        XCTAssertEqual(entries.count, 7)
+    }
+
+    func testWorkoutPlanExercisesFromDB() throws {
+        let exercises = try WorkoutPlan.exercises(for: .a, database: db)
+        XCTAssertEqual(exercises.count, 9)
+
+        // Verify the first exercise maps correctly
+        let warmup = exercises[0]
+        XCTAssertEqual(warmup.name, "Cardio warm-up (cycling)")
+        XCTAssertTrue(warmup.isTimed)
+        XCTAssertEqual(warmup.reps, "10 min")
+
+        // Verify a rep-based exercise
+        let chestPress = exercises[3]
+        XCTAssertEqual(chestPress.name, "Dumbbell chest press (push)")
+        XCTAssertFalse(chestPress.isTimed)
+        XCTAssertEqual(chestPress.sets, 4)
+        XCTAssertEqual(chestPress.reps, "10 reps")
+
+        // Verify daily challenge
+        let challenge = exercises[1]
+        XCTAssertTrue(challenge.isDailyChallenge)
+        XCTAssertEqual(challenge.reps, "10 + 10 reps")
+    }
 }

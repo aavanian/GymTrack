@@ -15,7 +15,7 @@ public final class ExerciseViewModel: ObservableObject {
     public init(database: AppDatabase, sessionType: SessionType) {
         self.database = database
         self.sessionType = sessionType
-        self.exercises = WorkoutPlan.exercises(for: sessionType)
+        self.exercises = (try? WorkoutPlan.exercises(for: sessionType, database: database)) ?? []
         self.startTime = Date()
     }
 

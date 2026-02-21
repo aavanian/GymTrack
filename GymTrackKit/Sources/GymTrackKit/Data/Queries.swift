@@ -119,4 +119,69 @@ public enum Queries {
                 .fetchCount(db)
         }
     }
+
+    // MARK: - Workouts & Exercises
+
+    /// Fetch all workouts
+    public static func allWorkouts(_ db: AppDatabase) throws -> [Workout] {
+        try db.dbWriter.read { dbConn in
+            try Workout.fetchAll(dbConn)
+        }
+    }
+
+    /// Fetch a workout by name
+    public static func workoutByName(_ db: AppDatabase, name: String) throws -> Workout? {
+        try db.dbWriter.read { dbConn in
+            try Workout
+                .filter(Column("name") == name)
+                .fetchOne(dbConn)
+        }
+    }
+
+    /// Fetch exercises for a workout, ordered by position.
+    /// Returns tuples of (ExerciseRecord, WorkoutExercise) so callers have both
+    /// the exercise definition and the per-workout overrides.
+    public static func exercisesForWorkout(
+        _ db: AppDatabase,
+        workoutId: Int64
+    ) throws -> [(ExerciseRecord, WorkoutExercise)] {
+        try db.dbWriter.read { dbConn in
+            let rows = try Row.fetchAll(
+                dbConn,
+                sql: """
+                    SELECT e.id, e.name, e.description, e.advice, e.counterUnit,
+                           e.defaultValue, e.isDailyChallenge,
+                           we.id AS weId, we.workoutId, we.exerciseId, we.position,
+                           we.counterValue, we.counterLabel, we.restSeconds, we.sets
+                    FROM workoutExercise we
+                    JOIN exercise e ON e.id = we.exerciseId
+                    WHERE we.workoutId = ?
+                    ORDER BY we.position
+                    """,
+                arguments: [workoutId]
+            )
+            return rows.map { row in
+                let exercise = ExerciseRecord(
+                    id: row["id"],
+                    name: row["name"],
+                    description: row["description"],
+                    advice: row["advice"],
+                    counterUnit: row["counterUnit"],
+                    defaultValue: row["defaultValue"],
+                    isDailyChallenge: row["isDailyChallenge"]
+                )
+                let we = WorkoutExercise(
+                    id: row["weId"],
+                    workoutId: row["workoutId"],
+                    exerciseId: row["exerciseId"],
+                    position: row["position"],
+                    counterValue: row["counterValue"],
+                    counterLabel: row["counterLabel"],
+                    restSeconds: row["restSeconds"],
+                    sets: row["sets"]
+                )
+                return (exercise, we)
+            }
+        }
+    }
 }

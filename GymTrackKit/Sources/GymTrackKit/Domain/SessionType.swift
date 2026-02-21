@@ -24,4 +24,13 @@ public enum SessionType: String, Codable, CaseIterable {
     public var shortLabel: String {
         rawValue
     }
+
+    /// Name used to look up the corresponding `Workout` row in the database.
+    public var workoutName: String {
+        switch self {
+        case .a: return "Day A"
+        case .b: return "Day B"
+        case .c: return "Day C"
+        }
+    }
 }

@@ -8,9 +8,9 @@ final class ExerciseViewModelTests: XCTestCase {
         db = try AppDatabase.empty()
     }
 
-    func testInitializesWithCorrectExercises() {
+    func testInitializesWithCorrectExercises() throws {
         let vm = ExerciseViewModel(database: db, sessionType: .a)
-        let exercises = WorkoutPlan.exercises(for: .a)
+        let exercises = try WorkoutPlan.exercises(for: .a, database: db)
         XCTAssertEqual(vm.exercises.count, exercises.count)
         XCTAssertEqual(vm.completedSteps.count, 0)
     }
