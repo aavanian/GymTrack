@@ -1,4 +1,7 @@
 import Foundation
+#if os(iOS)
+import HealthKit
+#endif
 
 public enum SessionType: String, Codable, CaseIterable {
     case a = "A"
@@ -33,4 +36,14 @@ public enum SessionType: String, Codable, CaseIterable {
         case .c: return "Day C"
         }
     }
+
+    #if os(iOS)
+    public var healthKitActivityType: HKWorkoutActivityType {
+        switch self {
+        case .a: return .traditionalStrengthTraining
+        case .b: return .mixedCardio
+        case .c: return .traditionalStrengthTraining
+        }
+    }
+    #endif
 }

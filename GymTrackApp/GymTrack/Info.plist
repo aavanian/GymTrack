@@ -20,6 +20,10 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>GymTrack can read your health data to show workout history.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>GymTrack records your workouts in Apple Health so they count toward your activity rings.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

@@ -1,5 +1,8 @@
 import Foundation
 import Combine
+#if os(iOS)
+import HealthKit
+#endif
 
 public struct ExerciseLogEntry {
     public var weight: Double?
@@ -20,12 +23,49 @@ public final class ExerciseViewModel: ObservableObject {
     private let startTime: Date
     private let workoutId: Int64?
 
+    #if os(iOS)
+    private let healthKitManager: HealthKitManaging?
+    #endif
+
     @Published public var completedSteps: Set<String> = []
     @Published public var elapsedSeconds: Int = 0
     @Published public var exerciseLogs: [String: ExerciseLogEntry] = [:]
 
     private var timer: Timer?
 
+    #if os(iOS)
+    public init(database: AppDatabase, sessionType: SessionType, healthKitManager: HealthKitManaging? = nil) {
+        self.database = database
+        self.sessionType = sessionType
+        self.exercises = (try? WorkoutPlan.exercises(for: sessionType, database: database)) ?? []
+        self.startTime = Date()
+        self.healthKitManager = healthKitManager
+
+        let wId = try? Queries.workoutByName(database, name: sessionType.workoutName)?.id
+        self.workoutId = wId
+
+        // Pre-fill weights from history
+        if let workoutId = wId {
+            let lastWeights = (try? Queries.lastWeights(database, forWorkoutId: workoutId)) ?? [:]
+            for exercise in exercises where exercise.hasWeight {
+                var entry = ExerciseLogEntry()
+                if let weight = lastWeights[exercise.workoutExerciseId] {
+                    entry.weight = weight
+                }
+                exerciseLogs[exercise.id] = entry
+            }
+        }
+
+        if let manager = healthKitManager {
+            let activityType = sessionType.healthKitActivityType
+            let start = self.startTime
+            Task {
+                await manager.requestAuthorizationIfNeeded()
+                try? await manager.startWorkout(activityType: activityType, startDate: start)
+            }
+        }
+    }
+    #else
     public init(database: AppDatabase, sessionType: SessionType) {
         self.database = database
         self.sessionType = sessionType
@@ -47,6 +87,7 @@ public final class ExerciseViewModel: ObservableObject {
             }
         }
     }
+    #endif
 
     public var completionPercentage: Double {
         guard !exercises.isEmpty else { return 0 }
@@ -116,10 +157,27 @@ public final class ExerciseViewModel: ObservableObject {
 
     public func abortWorkout() {
         stopTimer()
+        #if os(iOS)
+        if let manager = healthKitManager {
+            let elapsed = elapsedSeconds
+            Task {
+                if elapsed >= 300 {
+                    try? await manager.endWorkout(at: Date())
+                } else {
+                    await manager.discardWorkout()
+                }
+            }
+        }
+        #endif
     }
 
     public func finishWorkout(feedback: WorkoutFeedback) {
         stopTimer()
+        #if os(iOS)
+        if let manager = healthKitManager {
+            Task { try? await manager.endWorkout(at: Date()) }
+        }
+        #endif
         let duration = Int(Date().timeIntervalSince(startTime))
         let today = DateHelpers.dateString(from: Date())
         let startedAtStr = DateHelpers.dateTimeString(from: startTime)

@@ -31,7 +31,7 @@ let package = Package(
             dependencies: ["GymTrackKit"],
             exclude: {
                 #if os(Linux)
-                return ["ExerciseViewModelTests.swift", "HomeViewModelTests.swift"]
+                return ["ExerciseViewModelTests.swift", "HomeViewModelTests.swift", "HealthKitIntegrationTests.swift"]
                 #else
                 return []
                 #endif

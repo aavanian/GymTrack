@@ -1,6 +1,6 @@
 name: GymTrack
 options:
-  bundleIdPrefix: com.gymtrack
+  bundleIdPrefix: com.avanian
   deploymentTarget:
     iOS: "16.0"
 
@@ -20,10 +20,13 @@ targets:
       base:
         INFOPLIST_FILE: GymTrack/Info.plist
         CODE_SIGN_ENTITLEMENTS: GymTrack/GymTrack.entitlements
-        PRODUCT_BUNDLE_IDENTIFIER: com.gymtrack.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.avanian.gymtrack
     entitlements:
       path: GymTrack/GymTrack.entitlements
-      properties: {}
+      properties:
+        com.apple.developer.healthkit: true
+    capabilities:
+      HealthKit: true
 
   GymTrackTests:
     type: bundle.unit-test

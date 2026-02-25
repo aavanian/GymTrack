@@ -4,6 +4,10 @@ struct HomeView: View {
     @ObservedObject var viewModel: HomeViewModel
     let database: AppDatabase
 
+    #if os(iOS)
+    private let healthKitManager: HealthKitManaging = HealthKitManager()
+    #endif
+
     @State private var selectedSession: SessionType?
     @State private var activeWorkout: SessionType?
 
@@ -35,7 +39,11 @@ struct HomeView: View {
             #if os(iOS)
             .fullScreenCover(item: $activeWorkout) { sessionType in
                 ExerciseView(
-                    viewModel: ExerciseViewModel(database: database, sessionType: sessionType),
+                    viewModel: ExerciseViewModel(
+                        database: database,
+                        sessionType: sessionType,
+                        healthKitManager: healthKitManager
+                    ),
                     onFinish: {
                         activeWorkout = nil
                         viewModel.refresh()
