@@ -1,0 +1,48 @@
+name: OpenWO
+options:
+  bundleIdPrefix: com.avanian
+  deploymentTarget:
+    iOS: "18.0"
+
+packages:
+  OpenWOKit:
+    path: ../OpenWOKit
+
+targets:
+  OpenWO:
+    type: application
+    platform: iOS
+    sources:
+      - OpenWO
+    dependencies:
+      - package: OpenWOKit
+    settings:
+      base:
+        INFOPLIST_FILE: OpenWO/Info.plist
+        CODE_SIGN_ENTITLEMENTS: OpenWO/OpenWO.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.avanian.openwo
+    entitlements:
+      path: OpenWO/OpenWO.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.avanian.openwo
+        com.apple.developer.ubiquity-container-identifiers:
+          - iCloud.com.avanian.openwo
+        com.apple.developer.icloud-services:
+          - CloudDocuments
+    capabilities:
+      HealthKit: true
+      iCloud:
+        services:
+          - icloud-documents
+        containerIdentifiers:
+          - iCloud.com.avanian.openwo
+
+  OpenWOTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - OpenWOTests
+    dependencies:
+      - target: OpenWO

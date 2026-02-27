@@ -4,31 +4,31 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 run_swift() {
-    echo "=== Running GymTrackKit tests ==="
-    cd "$ROOT/GymTrackKit"
+    echo "=== Running OpenWOKit tests ==="
+    cd "$ROOT/OpenWOKit"
     swift test
 }
 
 run_xcode() {
     echo "=== Building Xcode project ==="
-    cd "$ROOT/GymTrackApp"
+    cd "$ROOT/OpenWOApp"
 
-    if [ ! -d GymTrack.xcodeproj ]; then
+    if [ ! -d OpenWO.xcodeproj ]; then
         echo "Generating Xcode project..."
         xcodegen generate
     fi
 
     xcodebuild build \
-        -project GymTrack.xcodeproj \
-        -scheme GymTrack \
-        -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+        -project OpenWO.xcodeproj \
+        -scheme OpenWO \
+        -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=latest' \
         -quiet
 }
 
 run_python() {
     echo "=== Running Python tests ==="
     cd "$ROOT"
-    uv run --with pytest pytest test_gymtrack.py -v
+    uv run --with pytest pytest test_openwo.py -v
 }
 
 case "${1:-all}" in

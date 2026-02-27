@@ -1,6 +1,6 @@
 # Analysis: HealthKit Integration
 
-**Goal:** Start an Apple HealthKit workout session when the user starts a GymTrack workout.
+**Goal:** Start an Apple HealthKit workout session when the user starts an OpenWO workout.
 
 ## What This Enables
 
@@ -13,7 +13,7 @@
 
 ### Required Setup
 
-1. **Entitlements:** Add HealthKit capability to `GymTrack.entitlements` (currently empty)
+1. **Entitlements:** Add HealthKit capability to `OpenWO.entitlements` (currently empty)
 2. **Info.plist:** Add usage description strings:
    - `NSHealthShareUsageDescription` — why the app reads health data
    - `NSHealthUpdateUsageDescription` — why the app writes health data
@@ -56,7 +56,7 @@ try await builder.finishWorkout()
 
 ### Integration Points in Current Code
 
-All in `ExerciseViewModel` (`GymTrackKit/Sources/GymTrackKit/ViewModels/ExerciseViewModel.swift`):
+All in `ExerciseViewModel` (`OpenWOKit/Sources/OpenWOKit/ViewModels/ExerciseViewModel.swift`):
 
 | Method              | HealthKit Action                                        |
 |---------------------|---------------------------------------------------------|

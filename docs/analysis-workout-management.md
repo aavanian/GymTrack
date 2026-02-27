@@ -18,7 +18,7 @@
 
 **Pros:**
 - Zero custom UI code
-- Immediate setup (`datasette gymtrack-backup.sqlite`)
+- Immediate setup (`datasette openwo-backup.sqlite`)
 - Good for browsing and understanding data
 
 **Cons:**

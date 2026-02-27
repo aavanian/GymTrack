@@ -62,7 +62,7 @@ fi
 
 # ── 3. Resolve Swift package dependencies ─────────────────────────────────────
 echo "Resolving Swift package dependencies..."
-cd "${CLAUDE_PROJECT_DIR}/GymTrackKit"
+cd "${CLAUDE_PROJECT_DIR}/OpenWOKit"
 swift package resolve
 
 echo "Session start hook complete."

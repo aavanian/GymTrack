@@ -78,7 +78,7 @@ specific algorithms, wrist detection).
 
 - Mirroring is for controlling a single shared session across devices (e.g.,
   start on phone, mirror to watch). It adds complexity.
-- Since GymTrack's primary UI is phone-based (exercise steps, weight logging),
+- Since OpenWO's primary UI is phone-based (exercise steps, weight logging),
   and the watch is a follow-along companion, two coordinated sessions via
   `WatchConnectivity` is simpler and gives the same end result.
 - If mirroring becomes desirable later (e.g., seamless handoff mid-workout),
@@ -208,7 +208,7 @@ struct WorkoutExport: Codable {
 // In StatsView or a dedicated export section:
 ShareLink(
     item: exportJSON,
-    preview: SharePreview("GymTrack Data", image: Image(systemName: "chart.bar"))
+    preview: SharePreview("OpenWO Data", image: Image(systemName: "chart.bar"))
 )
 ```
 

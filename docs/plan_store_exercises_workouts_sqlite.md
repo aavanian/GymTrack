@@ -86,7 +86,7 @@ workoutExercise rows (Day A):
 
 ### Step 1 — New GRDB model structs
 
-Create three new files in `GymTrackKit/Sources/GymTrackKit/Data/`:
+Create three new files in `OpenWOKit/Sources/OpenWOKit/Data/`:
 
 - **`ExerciseRecord.swift`** — GRDB `Codable, FetchableRecord, PersistableRecord` for the `exercise` table. Named `ExerciseRecord` to avoid collision with the existing view-facing `Exercise` struct.
 - **`Workout.swift`** — Same pattern for `workout` table.

@@ -4,8 +4,8 @@
 
 ## Current State
 
-- SQLite DB at `Library/Application Support/GymTrack/gymtrack.sqlite` inside the app container
-- `dl_db.sh` copies the DB from a connected device to `~/Downloads/gymtrack-backup.sqlite` via `xcrun devicectl`
+- SQLite DB at `Library/Application Support/OpenWO/openwo.sqlite` inside the app container
+- `dl_db.sh` copies the DB from a connected device to `~/Downloads/openwo-backup.sqlite` via `xcrun devicectl`
 - All models are `Codable`
 - No export functionality exists
 - Key tables for analysis: `session`, `exerciseLog`, `workoutExercise`, `exercise`

@@ -8,7 +8,7 @@ This is NOT about multi-device real-time sync or sharing data between users.
 
 ## Current State
 
-- **Storage:** GRDB/SQLite database at `~/Library/Application Support/GymTrack/gymtrack.sqlite`
+- **Storage:** GRDB/SQLite database at `~/Library/Application Support/OpenWO/openwo.sqlite`
 - **No cloud sync**, no background tasks, no export/import
 - **HealthKit integration** is separate and write-only (not affected by this)
 - **No App Group** or iCloud container configured
@@ -58,7 +58,7 @@ Store the SQLite database in the app's iCloud Documents container (`FileManager.
 |---|---|
 | Entitlements | Add `com.apple.developer.icloud-container-identifiers`, `com.apple.developer.icloud-services: [CloudDocuments]` |
 | project.yml | Add iCloud capability with Documents service |
-| `GymTrackApp.swift` | Change database path from `applicationSupportDirectory` to ubiquity container URL |
+| `OpenWOApp.swift` | Change database path from `applicationSupportDirectory` to ubiquity container URL |
 | `Database.swift` | Add startup logic: check iCloud availability, fall back to local if unavailable |
 
 **Conflict resolution:** iCloud Documents uses file-level conflict detection. When two devices edit the same file, iOS presents `NSFileVersion` conflicts. The app must:
@@ -98,24 +98,24 @@ Keep GRDB as the local database. Add a CloudKit sync layer that maps GRDB record
 | New file | `CloudKitSync.swift` — sync engine: change tracking, push/pull, conflict resolution |
 | `Database.swift` | Add change-tracking columns (`cloudKitRecordID`, `lastModified`, `needsSync`) |
 | Schema migration | v6: add sync metadata columns to `session`, `exerciseLog`, `dailyChallenge` |
-| `GymTrackApp.swift` | Initialize sync engine, subscribe to remote change notifications |
+| `OpenWOApp.swift` | Initialize sync engine, subscribe to remote change notifications |
 
 **Conflict resolution:** CloudKit provides per-record conflict detection via `serverRecord` in `CKError.serverRecordChanged`. The sync engine can implement:
 - **Last-writer-wins** (simplest): take the record with the latest `lastModified`
 - **Field-level merge** (more complex): merge non-conflicting field changes
 
-For GymTrack's data patterns (append-mostly session logs, daily challenge counters), last-writer-wins is likely sufficient.
+For OpenWO's data patterns (append-mostly session logs, daily challenge counters), last-writer-wins is likely sufficient.
 
 **CloudKit record design:**
 
 | CKRecord Type | Source Table | Synced Fields |
 |---|---|---|
-| `GymExercise` | `exercise` | All columns (catalog data, user-editable) |
-| `GymWorkout` | `workout` | name, description |
-| `GymWorkoutExercise` | `workoutExercise` | All columns (references to workout + exercise) |
-| `GymSession` | `session` | sessionType, date, startedAt, durationSeconds, isPartial, feedback |
-| `GymExerciseLog` | `exerciseLog` | reference to GymSession, workoutExercise mapping, weight, failed, achievedValue |
-| `GymDailyChallenge` | `dailyChallenge` | date, setsCompleted |
+| `OpenWOExercise` | `exercise` | All columns (catalog data, user-editable) |
+| `OpenWOWorkout` | `workout` | name, description |
+| `OpenWOWorkoutExercise` | `workoutExercise` | All columns (references to workout + exercise) |
+| `OpenWOSession` | `session` | sessionType, date, startedAt, durationSeconds, isPartial, feedback |
+| `OpenWOExerciseLog` | `exerciseLog` | reference to GymSession, workoutExercise mapping, weight, failed, achievedValue |
+| `OpenWODailyChallenge` | `dailyChallenge` | date, setsCompleted |
 
 All 6 tables are synced — exercises and workouts are user-editable data after initial seed.
 
@@ -209,7 +209,7 @@ The current schema uses `INTEGER PRIMARY KEY AUTOINCREMENT` everywhere. In a mul
 - Approach C replaces the ID system entirely with SwiftData's managed identifiers
 
 ### HealthKit Data
-HealthKit data is device-local and managed by Apple Health's own sync. GymTrack's iCloud sync does not need to handle it. The two systems remain decoupled.
+HealthKit data is device-local and managed by Apple Health's own sync. OpenWO's iCloud sync does not need to handle it. The two systems remain decoupled.
 
 ### Apple Developer Program
 All iCloud features require:

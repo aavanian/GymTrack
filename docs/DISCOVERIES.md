@@ -18,7 +18,7 @@ When building a Swift Package targeting both iOS and macOS (for `swift test` on 
 
 ## XcodeGen
 
-Run `xcodegen generate` from the `GymTrackApp/` directory to regenerate `.xcodeproj`. The generated project is gitignored.
+Run `xcodegen generate` from the `OpenWOApp/` directory to regenerate `.xcodeproj`. The generated project is gitignored.
 
 ## iCloud Documents + GRDB
 

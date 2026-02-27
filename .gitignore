@@ -1,11 +1,11 @@
-# Generated Xcode project (regenerate with `cd GymTrackApp && xcodegen generate`)
-GymTrackApp/GymTrack.xcodeproj/
+# Generated Xcode project (regenerate with `cd OpenWOApp && xcodegen generate`)
+OpenWOApp/OpenWO.xcodeproj/
 
 # Swift Package Manager
 .build/
 .swiftpm/
-GymTrackKit/.build/
-GymTrackKit/.swiftpm/
+OpenWOKit/.build/
+OpenWOKit/.swiftpm/
 
 # Xcode
 *.xcuserdata/
