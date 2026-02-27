@@ -25,6 +25,7 @@ targets:
         DEVELOPMENT_TEAM: 57YB623TNL
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.healthcare-fitness
         INFOPLIST_KEY_CFBundleDisplayName: OpenWO
+        TARGETED_DEVICE_FAMILY: 1
     entitlements:
       path: OpenWO/OpenWO.entitlements
       properties:
