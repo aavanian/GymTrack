@@ -48,7 +48,7 @@ struct ExerciseView: View {
                     #if os(iOS)
                     .scrollDismissesKeyboard(.interactively)
                     #endif
-                    .onChange(of: viewModel.completedSteps) { _ in
+                    .onChange(of: viewModel.completedSteps) {
                         let nextIncomplete = viewModel.exercises.first {
                             !viewModel.completedSteps.contains($0.id)
                         }

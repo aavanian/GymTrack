@@ -122,7 +122,7 @@ struct ExerciseStepCard: View {
                         .textFieldStyle(.roundedBorder)
                         #endif
                         .frame(width: 70)
-                        .onChange(of: weightText) { newValue in
+                        .onChange(of: weightText) { _, newValue in
                             onWeightChanged(Double(newValue))
                         }
                     Text("kg")
@@ -160,7 +160,7 @@ struct ExerciseStepCard: View {
                             #endif
                             .frame(width: 60)
                             .controlSize(.small)
-                            .onChange(of: achievedText) { newValue in
+                            .onChange(of: achievedText) { _, newValue in
                                 onFailed(achievedValueInSeconds(newValue))
                             }
                         Text(achievedUnitLabel)

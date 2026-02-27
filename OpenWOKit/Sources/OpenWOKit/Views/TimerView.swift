@@ -33,7 +33,7 @@ struct TimerView: View {
             }
             .buttonStyle(.plain)
         }
-        .onChange(of: stopped) { newValue in
+        .onChange(of: stopped) { _, newValue in
             if newValue && state.isRunning {
                 state.pause()
             }
