@@ -21,7 +21,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>OpenWO can read your health data to show workout history.</string>
+	<string>This app uses HealthKit to write workout sessions only. No health data is read or accessed.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>OpenWO records your workouts in Apple Health so they count toward your activity rings.</string>
 	<key>UIFileSharingEnabled</key>
@@ -46,5 +46,7 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+        <key>ITSAppUsesNonExemptEncryption</key>
+        <false/>
 </dict>
 </plist>
