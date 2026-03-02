@@ -130,11 +130,41 @@ def resolve_workout(conn: sqlite3.Connection, query: str) -> sqlite3.Row:
     die(msg)
 
 
+# ── Constants ─────────────────────────────────────────────────────────
+
+EXERCISE_TEMPLATE: dict = {
+    "id": "",
+    "name": "",
+    "tip": "",
+    "hasWeight": False,
+    "level": None,
+    "category": None,
+    "force": None,
+    "mechanic": None,
+    "equipment": None,
+    "primaryMuscles": [],
+    "secondaryMuscles": [],
+}
+
+
 # ── Helpers ───────────────────────────────────────────────────────────
 
 def die(msg: str) -> NoReturn:
     print(f"Error: {msg}", file=sys.stderr)
     sys.exit(1)
+
+
+def resolve_output_path(path_str: str | None) -> Path:
+    """Return the file path to write the exercise template to."""
+    if path_str is None:
+        p = Path.cwd() / "exercise_template.json"
+    else:
+        p = Path(path_str)
+        if p.is_dir():
+            p = p / "exercise_template.json"
+    if p.exists():
+        die(f"File already exists: {p}")
+    return p
 
 
 def format_counter(unit: str, value: int) -> str:
@@ -516,6 +546,34 @@ def cmd_reorder(conn: sqlite3.Connection, args: argparse.Namespace, db_path: Pat
         raise
 
 
+def _insert_exercise(conn: sqlite3.Connection, entry: dict) -> None:
+    """Insert a single exercise entry into the database (no transaction management)."""
+    primary = json.dumps(entry.get("primaryMuscles", [])) if entry.get("primaryMuscles") else None
+    secondary = json.dumps(entry.get("secondaryMuscles", [])) if entry.get("secondaryMuscles") else None
+    conn.execute(
+        """
+        INSERT INTO exercise
+          (name, description, instructions, tip, externalId, hasWeight,
+           level, category, force, mechanic, equipment,
+           primaryMuscles, secondaryMuscles, counterUnit, defaultValue, isDailyChallenge)
+        VALUES (?, '', '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reps', 10, 0)
+        """,
+        (
+            entry["name"],
+            entry.get("tip", ""),
+            entry.get("id"),
+            1 if entry.get("hasWeight") else 0,
+            entry.get("level"),
+            entry.get("category"),
+            entry.get("force"),
+            entry.get("mechanic"),
+            entry.get("equipment"),
+            primary,
+            secondary,
+        ),
+    )
+
+
 def cmd_import_exercises(conn: sqlite3.Connection, args: argparse.Namespace, db_path: Path) -> None:
     file_path = Path(args.file)
     if not file_path.exists():
@@ -524,8 +582,11 @@ def cmd_import_exercises(conn: sqlite3.Connection, args: argparse.Namespace, db_
     with open(file_path) as f:
         data = json.load(f)
 
+    if isinstance(data, dict):
+        data = [data]
+
     if not isinstance(data, list):
-        die("Expected a JSON array of exercise objects.")
+        die("Expected a JSON object or array of exercise objects.")
 
     # Get existing exercise names (case-insensitive)
     existing = {
@@ -563,32 +624,94 @@ def cmd_import_exercises(conn: sqlite3.Connection, args: argparse.Namespace, db_
     conn.execute("BEGIN")
     try:
         for e in to_import:
-            primary = json.dumps(e.get("primaryMuscles", [])) if e.get("primaryMuscles") else None
-            secondary = json.dumps(e.get("secondaryMuscles", [])) if e.get("secondaryMuscles") else None
-            conn.execute(
-                """
-                INSERT INTO exercise
-                  (name, description, instructions, tip, externalId, hasWeight,
-                   level, category, force, mechanic, equipment,
-                   primaryMuscles, secondaryMuscles, counterUnit, defaultValue, isDailyChallenge)
-                VALUES (?, '', '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reps', 10, 0)
-                """,
-                (
-                    e["name"],
-                    e.get("tip", ""),
-                    e.get("id"),
-                    1 if e.get("hasWeight") else 0,
-                    e.get("level"),
-                    e.get("category"),
-                    e.get("force"),
-                    e.get("mechanic"),
-                    e.get("equipment"),
-                    primary,
-                    secondary,
-                ),
-            )
+            _insert_exercise(conn, e)
         conn.commit()
         print(f"\nImported {len(to_import)} exercise(s).")
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def cmd_exercise_template(args: argparse.Namespace, conn_factory) -> None:
+    if not args.interactive:
+        output = resolve_output_path(args.path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(EXERCISE_TEMPLATE, indent=2) + "\n")
+        print(f"Template written to {output}")
+        return
+
+    conn, db_path = conn_factory()
+
+    # Gather fields interactively
+    name = input("Name (required): ").strip()
+    if not name:
+        die("Name is required.")
+
+    id_default = name.lower().replace(" ", "_").replace("-", "_")
+    id_val = input(f"ID [{id_default}]: ").strip() or id_default
+
+    tip = input("Tip (optional, Enter to skip): ").strip()
+
+    has_weight_raw = input("Has weight? (y/N): ").strip().lower()
+    has_weight = has_weight_raw == "y"
+
+    level_raw = input("Level (beginner/intermediate/advanced, Enter to skip): ").strip().lower()
+    level = level_raw if level_raw in ("beginner", "intermediate", "advanced") else None
+
+    category_raw = input("Category (strength/cardio/stretching, Enter to skip): ").strip().lower()
+    category = category_raw if category_raw in ("strength", "cardio", "stretching") else None
+
+    force_raw = input("Force (push/pull/static, Enter to skip): ").strip().lower()
+    force = force_raw if force_raw in ("push", "pull", "static") else None
+
+    mechanic_raw = input("Mechanic (compound/isolation, Enter to skip): ").strip().lower()
+    mechanic = mechanic_raw if mechanic_raw in ("compound", "isolation") else None
+
+    equipment = input("Equipment (Enter to skip): ").strip() or None
+
+    primary_raw = input("Primary muscles (comma-separated, Enter to skip): ").strip()
+    primary = [m.strip() for m in primary_raw.split(",") if m.strip()] if primary_raw else []
+
+    secondary_raw = input("Secondary muscles (comma-separated, Enter to skip): ").strip()
+    secondary = [m.strip() for m in secondary_raw.split(",") if m.strip()] if secondary_raw else []
+
+    entry = {
+        "id": id_val,
+        "name": name,
+        "tip": tip,
+        "hasWeight": has_weight,
+        "level": level,
+        "category": category,
+        "force": force,
+        "mechanic": mechanic,
+        "equipment": equipment,
+        "primaryMuscles": primary,
+        "secondaryMuscles": secondary,
+    }
+
+    print("\nPreview:")
+    print(json.dumps(entry, indent=2))
+
+    # Check for duplicates
+    existing = {
+        r["name"].lower()
+        for r in conn.execute("SELECT name FROM exercise").fetchall()
+    }
+    if name.lower() in existing:
+        die(f"Exercise '{name}' already exists.")
+
+    print(f"\nWould import: {name}")
+
+    if not args.execute:
+        print("\nDry run — pass --execute to apply.")
+        return
+
+    backup_db(db_path)
+    conn.execute("BEGIN")
+    try:
+        _insert_exercise(conn, entry)
+        conn.commit()
+        print(f"\nImported: {name}")
     except Exception:
         conn.rollback()
         raise
@@ -655,6 +778,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_imp.add_argument("file", help="JSON file path")
     p_imp.add_argument("--execute", action="store_true", help="Apply changes")
 
+    # exercise-template
+    p_tpl = sub.add_parser("exercise-template", help="Generate an exercise template or add interactively")
+    p_tpl.add_argument("path", nargs="?", help="Output file path (blank mode only)")
+    p_tpl.add_argument("--interactive", action="store_true", help="Prompt for fields and import")
+    p_tpl.add_argument("--execute", action="store_true", help="Apply changes (interactive mode only)")
+
     return parser
 
 
@@ -665,6 +794,11 @@ def main() -> None:
     if not args.command:
         parser.print_help()
         sys.exit(1)
+
+    # Blank template mode doesn't require a database
+    if args.command == "exercise-template" and not args.interactive:
+        cmd_exercise_template(args, None)
+        return
 
     db_path = discover_db(args.db)
     conn = connect(db_path)
@@ -684,6 +818,8 @@ def main() -> None:
         cmd_reorder(conn, args, db_path)
     elif args.command == "import-exercises":
         cmd_import_exercises(conn, args, db_path)
+    elif args.command == "exercise-template":
+        cmd_exercise_template(args, lambda: (conn, db_path))
 
     conn.close()
 

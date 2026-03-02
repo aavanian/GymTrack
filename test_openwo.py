@@ -2,9 +2,11 @@
 
 import argparse
 import json
+import os
 import sqlite3
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import openwo
@@ -506,6 +508,163 @@ class TestCombinedOperations(unittest.TestCase):
         active = get_active_positions(self.conn, 1)
         positions = [p for p, _ in active]
         self.assertEqual(positions, [1, 2, 3, 4, 5])
+
+
+# ── Exercise Template Tests ──────────────────────────────────────────
+
+
+class TestResolveOutputPath(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._orig_cwd = os.getcwd()
+
+    def tearDown(self):
+        os.chdir(self._orig_cwd)
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_no_path_uses_cwd(self):
+        os.chdir(self.tmpdir)
+        result = openwo.resolve_output_path(None)
+        self.assertEqual(result.resolve(), (Path(self.tmpdir) / "exercise_template.json").resolve())
+
+    def test_existing_dir_appends_filename(self):
+        result = openwo.resolve_output_path(self.tmpdir)
+        self.assertEqual(result, Path(self.tmpdir) / "exercise_template.json")
+
+    def test_new_file_path_returned_as_is(self):
+        new_path = str(Path(self.tmpdir) / "custom.json")
+        result = openwo.resolve_output_path(new_path)
+        self.assertEqual(result, Path(new_path))
+
+    def test_existing_file_exits(self):
+        existing = Path(self.tmpdir) / "exists.json"
+        existing.write_text("{}")
+        with self.assertRaises(SystemExit):
+            openwo.resolve_output_path(str(existing))
+
+
+class TestExerciseTemplateBlank(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self._orig_cwd = os.getcwd()
+        openwo._backup_done = True
+
+    def tearDown(self):
+        os.chdir(self._orig_cwd)
+        import shutil
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_blank_no_path_writes_to_cwd(self):
+        os.chdir(self.tmpdir)
+        args = argparse.Namespace(interactive=False, execute=False, path=None)
+        openwo.cmd_exercise_template(args, None)
+
+        out = Path(self.tmpdir) / "exercise_template.json"
+        self.assertTrue(out.exists())
+        data = json.loads(out.read_text())
+        self.assertEqual(data, openwo.EXERCISE_TEMPLATE)
+
+    def test_blank_existing_dir_writes_inside(self):
+        args = argparse.Namespace(interactive=False, execute=False, path=self.tmpdir)
+        openwo.cmd_exercise_template(args, None)
+
+        out = Path(self.tmpdir) / "exercise_template.json"
+        self.assertTrue(out.exists())
+
+    def test_blank_new_file_path(self):
+        new_path = str(Path(self.tmpdir) / "my_exercise.json")
+        args = argparse.Namespace(interactive=False, execute=False, path=new_path)
+        openwo.cmd_exercise_template(args, None)
+
+        self.assertTrue(Path(new_path).exists())
+
+    def test_blank_existing_file_exits(self):
+        existing = Path(self.tmpdir) / "exists.json"
+        existing.write_text("{}")
+        args = argparse.Namespace(interactive=False, execute=False, path=str(existing))
+        with self.assertRaises(SystemExit):
+            openwo.cmd_exercise_template(args, None)
+
+
+class TestImportSingleObject(unittest.TestCase):
+    def setUp(self):
+        self.conn = create_test_db()
+        self.db_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+        self.db_path = Path(self.db_file.name)
+        self.db_file.close()
+        openwo._backup_done = True
+
+    def test_single_object_accepted(self):
+        data = {"id": "single_lunge", "name": "Single Lunge", "hasWeight": False}
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(data, f)
+            f.flush()
+            args = argparse.Namespace(file=f.name, execute=True)
+            openwo.cmd_import_exercises(self.conn, args, self.db_path)
+
+        row = self.conn.execute(
+            "SELECT * FROM exercise WHERE name = 'Single Lunge'"
+        ).fetchone()
+        self.assertIsNotNone(row)
+
+
+class TestExerciseTemplateInteractive(unittest.TestCase):
+    def setUp(self):
+        self.conn = create_test_db()
+        self.db_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+        self.db_path = Path(self.db_file.name)
+        self.db_file.close()
+        openwo._backup_done = True
+
+    def _factory(self):
+        return self.conn, self.db_path
+
+    def _inputs(
+        self,
+        name="Test Exercise",
+        id_val="",
+        tip="",
+        has_weight="n",
+        level="",
+        category="",
+        force="",
+        mechanic="",
+        equipment="",
+        primary="",
+        secondary="",
+    ):
+        return [name, id_val, tip, has_weight, level, category, force,
+                mechanic, equipment, primary, secondary]
+
+    def test_interactive_dry_run_does_not_insert(self):
+        inputs = self._inputs(name="Lunge Test", tip="Keep knee bent")
+        args = argparse.Namespace(interactive=True, execute=False, path=None)
+        with unittest.mock.patch("builtins.input", side_effect=inputs):
+            openwo.cmd_exercise_template(args, self._factory)
+
+        row = self.conn.execute(
+            "SELECT * FROM exercise WHERE name = 'Lunge Test'"
+        ).fetchone()
+        self.assertIsNone(row)
+
+    def test_interactive_execute_inserts(self):
+        inputs = self._inputs(
+            name="Lunge Test",
+            tip="Keep knee bent",
+            has_weight="y",
+            primary="quadriceps,glutes",
+        )
+        args = argparse.Namespace(interactive=True, execute=True, path=None)
+        with unittest.mock.patch("builtins.input", side_effect=inputs):
+            openwo.cmd_exercise_template(args, self._factory)
+
+        row = self.conn.execute(
+            "SELECT * FROM exercise WHERE name = 'Lunge Test'"
+        ).fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["tip"], "Keep knee bent")
+        self.assertEqual(row["hasWeight"], 1)
 
 
 if __name__ == "__main__":
