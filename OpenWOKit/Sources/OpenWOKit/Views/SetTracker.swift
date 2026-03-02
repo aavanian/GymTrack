@@ -4,7 +4,7 @@ struct SetTracker: View {
     let totalSets: Int
     let onAllCompleted: () -> Void
 
-    @State private var completedSets: Int = 0
+    @Binding var completedSets: Int
 
     var body: some View {
         HStack(spacing: 8) {

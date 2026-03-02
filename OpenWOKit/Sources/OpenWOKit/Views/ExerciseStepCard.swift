@@ -14,6 +14,7 @@ struct ExerciseStepCard: View {
     @State private var weightText: String = ""
     @State private var showFailedInput: Bool = false
     @State private var achievedText: String = ""
+    @State private var completedSets: Int = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -90,14 +91,14 @@ struct ExerciseStepCard: View {
                 HStack {
                     TimerView(label: exercise.reps, stopped: isCompleted)
                     Spacer()
-                    SetTracker(totalSets: sets, onAllCompleted: onComplete)
+                    SetTracker(totalSets: sets, onAllCompleted: onComplete, completedSets: $completedSets)
                 }
             } else {
                 HStack {
                     Text(exercise.reps)
                         .font(.subheadline)
                     Spacer()
-                    SetTracker(totalSets: sets, onAllCompleted: onComplete)
+                    SetTracker(totalSets: sets, onAllCompleted: onComplete, completedSets: $completedSets)
                 }
             }
         } else if exercise.isTimed {
