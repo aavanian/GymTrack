@@ -1,13 +1,18 @@
 import SwiftUI
 import Combine
 
-struct TimerView: View {
-    let label: String
-    var stopped: Bool = false
+public struct TimerView: View {
+    public let label: String
+    public var stopped: Bool
 
     @StateObject private var state = TimerState()
 
-    var body: some View {
+    public init(label: String, stopped: Bool = false) {
+        self.label = label
+        self.stopped = stopped
+    }
+
+    public var body: some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.subheadline)

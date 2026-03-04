@@ -6,10 +6,24 @@ struct HomeView: View {
 
     #if os(iOS)
     private let healthKitManager: HealthKitManaging = HealthKitManager()
+    private let watchCompanion: WatchCompanionManaging?
     #endif
 
     @State private var selectedSession: SessionType?
     @State private var activeWorkout: SessionType?
+
+    #if os(iOS)
+    init(viewModel: HomeViewModel, database: AppDatabase, watchCompanion: WatchCompanionManaging? = nil) {
+        self.viewModel = viewModel
+        self.database = database
+        self.watchCompanion = watchCompanion
+    }
+    #else
+    init(viewModel: HomeViewModel, database: AppDatabase) {
+        self.viewModel = viewModel
+        self.database = database
+    }
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -33,7 +47,9 @@ struct HomeView: View {
                         selectedSession = nil
                     }
                 )
+                #if os(iOS) || os(macOS)
                 .presentationDetents([.medium])
+                #endif
             }
             #if os(iOS)
             .fullScreenCover(item: $activeWorkout) { sessionType in
@@ -41,7 +57,8 @@ struct HomeView: View {
                     viewModel: ExerciseViewModel(
                         database: database,
                         sessionType: sessionType,
-                        healthKitManager: healthKitManager
+                        healthKitManager: healthKitManager,
+                        watchCompanion: watchCompanion
                     ),
                     onFinish: {
                         activeWorkout = nil

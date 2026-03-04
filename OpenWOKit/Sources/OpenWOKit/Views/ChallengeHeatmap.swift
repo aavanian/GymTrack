@@ -14,7 +14,11 @@ struct ChallengeHeatmap: View {
                         Text(String(year)).tag(year)
                     }
                 }
+                #if os(iOS) || os(macOS)
                 .pickerStyle(.menu)
+                #else
+                .pickerStyle(.wheel)
+                #endif
 
                 legend
 

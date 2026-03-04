@@ -75,6 +75,10 @@ struct WeightProgressionChart: View {
                 Text(exercise.name).tag(exercise.id)
             }
         }
+        #if os(iOS) || os(macOS)
         .pickerStyle(.menu)
+        #else
+        .pickerStyle(.wheel)
+        #endif
     }
 }

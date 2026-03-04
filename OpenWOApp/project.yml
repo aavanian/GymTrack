@@ -9,6 +9,30 @@ packages:
     path: ../OpenWOKit
 
 targets:
+  OpenWOWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - OpenWOWatch
+    dependencies:
+      - package: OpenWOKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.avanian.openwo.watchkitapp
+        DEVELOPMENT_TEAM: 57YB623TNL
+        INFOPLIST_KEY_CFBundleDisplayName: OpenWO
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.avanian.openwo
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "This app uses HealthKit to write workout sessions only. No health data is read or accessed."
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: "OpenWO records your workouts in Apple Health so they count toward your activity rings."
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+    entitlements:
+      path: OpenWOWatch/OpenWOWatch.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+
   OpenWO:
     type: application
     platform: iOS
@@ -16,6 +40,7 @@ targets:
       - OpenWO
     dependencies:
       - package: OpenWOKit
+      - target: OpenWOWatch
     settings:
       base:
         INFOPLIST_FILE: OpenWO/Info.plist
@@ -53,10 +78,20 @@ targets:
       - target: OpenWO
 
 schemes:
+  OpenWOWatch:
+    build:
+      targets:
+        OpenWOWatch: all
+    run:
+      config: Debug
+      environmentVariables:
+        OS_ACTIVITY_MODE: disable
+
   OpenWO:
     build:
       targets:
         OpenWO: all
+        OpenWOWatch: all
     run:
       config: Debug
       environmentVariables:

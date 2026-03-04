@@ -68,6 +68,7 @@ struct ExerciseView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
+                #if os(iOS) || os(macOS)
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text(viewModel.sessionType.displayName)
@@ -77,6 +78,7 @@ struct ExerciseView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                #endif
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Abort", role: .destructive) {
                         showAbortConfirmation = true
@@ -114,7 +116,9 @@ struct ExerciseView: View {
                     Haptics.success()
                     onFinish()
                 }
+                #if os(iOS) || os(macOS)
                 .presentationDetents([.medium])
+                #endif
             }
         }
     }

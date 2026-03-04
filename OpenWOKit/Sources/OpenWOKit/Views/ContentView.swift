@@ -6,19 +6,34 @@ public struct ContentView: View {
     @State private var selectedTab: Int = 0
     let database: AppDatabase
 
+    #if os(iOS)
+    private let watchCompanion: WatchCompanionManaging?
+
+    public init(database: AppDatabase, watchCompanion: WatchCompanionManaging? = nil) {
+        self.database = database
+        self.homeViewModel = HomeViewModel(database: database)
+        self.statsViewModel = StatsViewModel(database: database)
+        self.watchCompanion = watchCompanion
+    }
+    #else
     public init(database: AppDatabase) {
         self.database = database
         self.homeViewModel = HomeViewModel(database: database)
         self.statsViewModel = StatsViewModel(database: database)
     }
+    #endif
 
     public var body: some View {
         TabView(selection: $selectedTab) {
-            HomeView(viewModel: homeViewModel, database: database)
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
+            #if os(iOS)
+            HomeView(viewModel: homeViewModel, database: database, watchCompanion: watchCompanion)
+                .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(0)
+            #else
+            HomeView(viewModel: homeViewModel, database: database)
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(0)
+            #endif
 
             StatsView(viewModel: statsViewModel)
                 .tabItem {

@@ -25,6 +25,8 @@ public final class ExerciseViewModel: ObservableObject {
 
     #if os(iOS)
     private let healthKitManager: HealthKitManaging?
+    private let watchCompanion: WatchCompanionManaging?
+    private var cancellables: Set<AnyCancellable> = []
     #endif
 
     @Published public var completedSteps: Set<String> = []
@@ -34,12 +36,18 @@ public final class ExerciseViewModel: ObservableObject {
     private var timer: Timer?
 
     #if os(iOS)
-    public init(database: AppDatabase, sessionType: SessionType, healthKitManager: HealthKitManaging? = nil) {
+    public init(
+        database: AppDatabase,
+        sessionType: SessionType,
+        healthKitManager: HealthKitManaging? = nil,
+        watchCompanion: WatchCompanionManaging? = nil
+    ) {
         self.database = database
         self.sessionType = sessionType
         self.exercises = (try? WorkoutPlan.exercises(for: sessionType, database: database)) ?? []
         self.startTime = Date()
         self.healthKitManager = healthKitManager
+        self.watchCompanion = watchCompanion
 
         let wId = try? Queries.workoutByName(database, name: sessionType.workoutName)?.id
         self.workoutId = wId
@@ -56,7 +64,10 @@ public final class ExerciseViewModel: ObservableObject {
             }
         }
 
-        if let manager = healthKitManager {
+        watchCompanion?.sendWorkoutStarted(exercises, sessionType: sessionType)
+
+        // Only start phone HKWorkoutSession when the watch is not available to own it
+        if let manager = healthKitManager, watchCompanion?.isWatchReachable != true {
             let activityType = sessionType.healthKitActivityType
             let start = self.startTime
             Task {
@@ -64,6 +75,18 @@ public final class ExerciseViewModel: ObservableObject {
                 try? await manager.startWorkout(activityType: activityType, startDate: start)
             }
         }
+
+        watchCompanion?.setCompletedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (exerciseId, count) in
+                guard let self else { return }
+                if let exercise = self.exercises.first(where: { $0.id == exerciseId }),
+                   let totalSets = exercise.sets,
+                   count >= totalSets {
+                    self.markStepCompleted(exerciseId)
+                }
+            }
+            .store(in: &cancellables)
     }
     #else
     public init(database: AppDatabase, sessionType: SessionType) {
@@ -158,6 +181,7 @@ public final class ExerciseViewModel: ObservableObject {
     public func abortWorkout() {
         stopTimer()
         #if os(iOS)
+        watchCompanion?.sendWorkoutEnded()
         if let manager = healthKitManager {
             let elapsed = elapsedSeconds
             Task {
@@ -174,6 +198,7 @@ public final class ExerciseViewModel: ObservableObject {
     public func finishWorkout(feedback: WorkoutFeedback) {
         stopTimer()
         #if os(iOS)
+        watchCompanion?.sendWorkoutEnded()
         if let manager = healthKitManager {
             Task { try? await manager.endWorkout(at: Date()) }
         }

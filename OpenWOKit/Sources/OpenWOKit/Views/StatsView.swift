@@ -13,7 +13,9 @@ struct StatsView: View {
                     Text("Bests").tag(StatsSection.personalBests)
                     Text("Challenge").tag(StatsSection.challengeHeatmap)
                 }
+                #if os(iOS) || os(macOS)
                 .pickerStyle(.segmented)
+                #endif
                 .padding(.horizontal)
                 .padding(.vertical, 8)
 

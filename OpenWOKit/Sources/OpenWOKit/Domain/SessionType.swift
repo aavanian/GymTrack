@@ -1,5 +1,5 @@
 import Foundation
-#if os(iOS)
+#if os(iOS) || os(watchOS)
 import HealthKit
 #endif
 
@@ -37,7 +37,7 @@ public enum SessionType: String, Codable, CaseIterable {
         }
     }
 
-    #if os(iOS)
+    #if os(iOS) || os(watchOS)
     public var healthKitActivityType: HKWorkoutActivityType {
         switch self {
         case .a: return .traditionalStrengthTraining

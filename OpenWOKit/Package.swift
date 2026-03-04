@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "OpenWOKit",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v14), .watchOS(.v10)],
     products: [
         .library(name: "OpenWOKit", targets: ["OpenWOKit"]),
     ],

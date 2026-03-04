@@ -4,6 +4,7 @@ import OpenWOKit
 @main
 struct OpenWOApp: App {
     let database: AppDatabase
+    @StateObject private var watchBridge = WatchBridge()
 
     init() {
         do {
@@ -21,7 +22,7 @@ struct OpenWOApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(database: database)
+            ContentView(database: database, watchCompanion: watchBridge)
         }
     }
 

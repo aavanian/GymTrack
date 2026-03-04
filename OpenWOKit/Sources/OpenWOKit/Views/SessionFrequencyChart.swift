@@ -17,7 +17,9 @@ struct SessionFrequencyChart: View {
                     Text("Weekly").tag(Granularity.weekly)
                     Text("Monthly").tag(Granularity.monthly)
                 }
+                #if os(iOS) || os(macOS)
                 .pickerStyle(.segmented)
+                #endif
 
                 if viewModel.sessionCounts.isEmpty {
                     ContentUnavailableView(

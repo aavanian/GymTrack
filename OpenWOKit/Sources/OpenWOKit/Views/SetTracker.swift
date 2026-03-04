@@ -1,12 +1,18 @@
 import SwiftUI
 
-struct SetTracker: View {
-    let totalSets: Int
-    let onAllCompleted: () -> Void
+public struct SetTracker: View {
+    public let totalSets: Int
+    public let onAllCompleted: () -> Void
 
-    @Binding var completedSets: Int
+    @Binding public var completedSets: Int
 
-    var body: some View {
+    public init(totalSets: Int, onAllCompleted: @escaping () -> Void, completedSets: Binding<Int>) {
+        self.totalSets = totalSets
+        self.onAllCompleted = onAllCompleted
+        self._completedSets = completedSets
+    }
+
+    public var body: some View {
         HStack(spacing: 8) {
             ForEach(0..<totalSets, id: \.self) { index in
                 Circle()
